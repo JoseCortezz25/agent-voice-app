@@ -1499,3 +1499,655 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
 
 - Use component composition
 - Atomic Zustand stores instead of global store
+
+---
+
+## 8. Voice Agent Specific Patterns
+
+### 8.1 White Library Integration Pattern (Chat-based Voice)
+
+**Architecture**: HTTP-based request/response with pre-built UI components
+
+**Pattern Structure**:
+
+```
+User Interaction (White Library UI)
+       ↓
+Client State (White Library Store)
+       ↓
+HTTP POST (to webhook endpoint)
+       ↓
+Server Action (domains/chat-agent/actions.ts)
+       ↓
+Backend Processing (Gemini API or custom)
+       ↓
+JSON Response
+       ↓
+White Library Store Update
+       ↓
+UI Re-render (automatic)
+```
+
+**Implementation Example**:
+
+```tsx
+// domains/chat-agent/hooks/use-chat-config.ts
+import { defaultChatConfig, defaultChatTheme } from 'white-library';
+import type { ChatConfig, ChatTheme } from 'white-library';
+
+export function useChatConfig() {
+  const config: ChatConfig = {
+    ...defaultChatConfig,
+    agentUrl: '/api/chat-webhook', // Server Action endpoint
+    texts: {
+      headerTitle: 'Voice Assistant',
+      inputPlaceholder: 'Type or record your message...',
+      recordingText: 'Recording...',
+      listeningText: 'Listening...'
+    },
+    behavior: {
+      autoScroll: true,
+      showTypingIndicator: true,
+      enableAudio: true,
+      maxMessageLength: 5000,
+      recordingTimeLimit: 60000 // 60 seconds
+    }
+  };
+
+  const theme: ChatTheme = {
+    ...defaultChatTheme,
+    header: {
+      ...defaultChatTheme.header,
+      backgroundColor: '#2563eb',
+      titleColor: '#ffffff'
+    },
+    bubbles: {
+      ...defaultChatTheme.bubbles,
+      user: {
+        ...defaultChatTheme.bubbles?.user,
+        backgroundColor: '#2563eb',
+        textColor: '#ffffff'
+      },
+      assistant: {
+        ...defaultChatTheme.bubbles?.assistant,
+        backgroundColor: '#f3f4f6',
+        textColor: '#111827'
+      }
+    }
+  };
+
+  return { config, theme };
+}
+
+// domains/chat-agent/components/organisms/white-chat-container.tsx
+'use client';
+import { ChatPage } from 'white-library';
+import { useChatConfig } from '../../hooks/use-chat-config';
+
+export function WhiteChatContainer() {
+  const { config, theme } = useChatConfig();
+
+  return (
+    <div style={{ width: '100%', height: '600px' }}>
+      <ChatPage theme={theme} config={config} />
+    </div>
+  );
+}
+
+// app/api/chat-webhook/route.ts (Next.js API Route)
+import { NextRequest, NextResponse } from 'next/server';
+import { processChatMessage, processAudioMessage } from '@/domains/chat-agent/actions';
+
+export async function POST(request: NextRequest) {
+  const contentType = request.headers.get('content-type');
+
+  // Text message
+  if (contentType?.includes('application/json')) {
+    const body = await request.json();
+    const { message, sessionId, type } = body;
+
+    const response = await processChatMessage(message, sessionId);
+    return NextResponse.json(response);
+  }
+
+  // Audio message (multipart/form-data)
+  if (contentType?.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const audioBlob = formData.get('audio') as Blob;
+    const sessionId = formData.get('sessionId') as string;
+
+    const response = await processAudioMessage(audioBlob, sessionId);
+    return NextResponse.json(response);
+  }
+
+  return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
+}
+
+// domains/chat-agent/actions.ts
+'use server';
+
+export async function processChatMessage(message: string, sessionId: string) {
+  // Process with Gemini API or custom logic
+  // Return format: multiple fields = multiple messages
+  return {
+    Part1: 'This is the first part of the response.',
+    Part2: 'This is the second part.',
+  };
+}
+
+export async function processAudioMessage(audioBlob: Blob, sessionId: string) {
+  // Convert OGG to text (speech-to-text)
+  // Process with AI
+  // Return response
+  return {
+    Transcription: 'User said: Hello',
+    Response: 'AI response here'
+  };
+}
+```
+
+**Key Rules**:
+- White Library manages its own state (messages, sessionId, UI)
+- Server Actions only handle business logic
+- Webhook endpoint MUST be configured in `config.agentUrl`
+- Audio is sent as OGG Blob via multipart/form-data
+- Response format with multiple fields renders as multiple messages
+
+---
+
+### 8.2 Gemini Live API Integration Pattern (Real-time Voice)
+
+**Architecture**: WebSocket-based bidirectional streaming with custom UI
+
+**Pattern Structure**:
+
+```
+User speaks (MediaStream)
+       ↓
+Audio Capture (Web Audio API)
+       ↓
+Encode to Base64 / PCM
+       ↓
+WebSocket Send (to Gemini Live API)
+       ↓
+WebSocket Receive (streamed audio from AI)
+       ↓
+Decode Base64 → AudioBuffer
+       ↓
+Audio Playback (Web Audio API)
+       ↓
+Speaker Output
+```
+
+**Implementation Example**:
+
+```tsx
+// domains/live-voice-agent/services/websocket-client.ts
+export class GeminiLiveWebSocketClient {
+  private ws: WebSocket | null = null;
+  private apiKey: string;
+  private model: string;
+
+  constructor(apiKey: string, model: string = 'gemini-2.0-flash-exp') {
+    this.apiKey = apiKey;
+    this.model = model;
+  }
+
+  async connect(): Promise<void> {
+    const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
+
+    this.ws = new WebSocket(url);
+
+    this.ws.onopen = () => {
+      // Send setup message
+      this.sendSetup();
+    };
+
+    this.ws.onmessage = (event) => {
+      this.handleMessage(JSON.parse(event.data));
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    this.ws.onclose = () => {
+      console.log('WebSocket closed');
+    };
+  }
+
+  private sendSetup(): void {
+    const setupMessage = {
+      setup: {
+        model: `models/${this.model}`,
+        generation_config: {
+          response_modalities: ['AUDIO'],
+          speech_config: {
+            voice_config: {
+              prebuilt_voice_config: {
+                voice_name: 'Puck'
+              }
+            }
+          }
+        }
+      }
+    };
+
+    this.ws?.send(JSON.stringify(setupMessage));
+  }
+
+  sendAudio(audioData: ArrayBuffer): void {
+    const base64Audio = this.arrayBufferToBase64(audioData);
+
+    const message = {
+      realtime_input: {
+        media_chunks: [
+          {
+            mime_type: 'audio/pcm',
+            data: base64Audio
+          }
+        ]
+      }
+    };
+
+    this.ws?.send(JSON.stringify(message));
+  }
+
+  private handleMessage(message: any): void {
+    if (message.serverContent?.modelTurn?.parts) {
+      const parts = message.serverContent.modelTurn.parts;
+
+      for (const part of parts) {
+        if (part.inlineData?.mimeType === 'audio/pcm') {
+          const audioData = this.base64ToArrayBuffer(part.inlineData.data);
+          this.onAudioReceived?.(audioData);
+        }
+      }
+    }
+  }
+
+  onAudioReceived?: (audioData: ArrayBuffer) => void;
+
+  disconnect(): void {
+    this.ws?.close();
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    // Implementation
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  private base64ToArrayBuffer(base64: string): ArrayBuffer {
+    // Implementation
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+}
+
+// domains/live-voice-agent/services/audio-processor.ts
+export class AudioProcessor {
+  private audioContext: AudioContext;
+  private mediaStream: MediaStream | null = null;
+  private scriptProcessor: ScriptProcessorNode | null = null;
+
+  constructor() {
+    this.audioContext = new AudioContext({ sampleRate: 16000 });
+  }
+
+  async startCapture(onAudioData: (data: ArrayBuffer) => void): Promise<void> {
+    this.mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true
+      }
+    });
+
+    const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+    this.scriptProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
+
+    this.scriptProcessor.onaudioprocess = (event) => {
+      const inputData = event.inputBuffer.getChannelData(0);
+      const pcmData = this.float32ToPCM16(inputData);
+      onAudioData(pcmData.buffer);
+    };
+
+    source.connect(this.scriptProcessor);
+    this.scriptProcessor.connect(this.audioContext.destination);
+  }
+
+  stopCapture(): void {
+    this.scriptProcessor?.disconnect();
+    this.mediaStream?.getTracks().forEach(track => track.stop());
+  }
+
+  async playAudio(audioData: ArrayBuffer): Promise<void> {
+    const audioBuffer = await this.audioContext.decodeAudioData(audioData);
+    const source = this.audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(this.audioContext.destination);
+    source.start();
+  }
+
+  private float32ToPCM16(float32Array: Float32Array): Int16Array {
+    const pcm16 = new Int16Array(float32Array.length);
+    for (let i = 0; i < float32Array.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32Array[i]));
+      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return pcm16;
+  }
+}
+
+// domains/live-voice-agent/hooks/use-gemini-live.ts
+'use client';
+import { useState, useCallback, useRef } from 'react';
+import { GeminiLiveWebSocketClient } from '../services/websocket-client';
+import { AudioProcessor } from '../services/audio-processor';
+
+export function useGeminiLive(apiKey: string) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  const wsClient = useRef<GeminiLiveWebSocketClient | null>(null);
+  const audioProcessor = useRef<AudioProcessor | null>(null);
+
+  const connect = useCallback(async () => {
+    wsClient.current = new GeminiLiveWebSocketClient(apiKey);
+    audioProcessor.current = new AudioProcessor();
+
+    wsClient.current.onAudioReceived = async (audioData) => {
+      await audioProcessor.current?.playAudio(audioData);
+    };
+
+    await wsClient.current.connect();
+    setIsConnected(true);
+  }, [apiKey]);
+
+  const startVoiceCapture = useCallback(async () => {
+    if (!audioProcessor.current || !wsClient.current) return;
+
+    await audioProcessor.current.startCapture((audioData) => {
+      wsClient.current?.sendAudio(audioData);
+    });
+
+    setIsCapturing(true);
+  }, []);
+
+  const stopVoiceCapture = useCallback(() => {
+    audioProcessor.current?.stopCapture();
+    setIsCapturing(false);
+  }, []);
+
+  const disconnect = useCallback(() => {
+    stopVoiceCapture();
+    wsClient.current?.disconnect();
+    setIsConnected(false);
+  }, [stopVoiceCapture]);
+
+  return {
+    isConnected,
+    isCapturing,
+    connect,
+    disconnect,
+    startVoiceCapture,
+    stopVoiceCapture
+  };
+}
+
+// domains/live-voice-agent/components/organisms/live-voice-session.tsx
+'use client';
+import { useGeminiLive } from '../../hooks/use-gemini-live';
+
+export function LiveVoiceSession({ apiKey }: { apiKey: string }) {
+  const {
+    isConnected,
+    isCapturing,
+    connect,
+    disconnect,
+    startVoiceCapture,
+    stopVoiceCapture
+  } = useGeminiLive(apiKey);
+
+  return (
+    <div className="voice-session">
+      {!isConnected ? (
+        <button onClick={connect}>Connect to Gemini Live</button>
+      ) : (
+        <>
+          <p>Status: Connected</p>
+          {!isCapturing ? (
+            <button onClick={startVoiceCapture}>Start Speaking</button>
+          ) : (
+            <button onClick={stopVoiceCapture}>Stop Speaking</button>
+          )}
+          <button onClick={disconnect}>Disconnect</button>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+**Key Rules**:
+- WebSocket connection MUST be established before audio streaming
+- Audio MUST be encoded to Base64 or PCM format
+- Setup message MUST be sent after WebSocket connection opens
+- Audio playback MUST use Web Audio API for low latency
+- State management MUST use Zustand (not White Library store)
+- Services MUST be in `/domains/live-voice-agent/services/`
+
+---
+
+### 8.3 Service Layer Pattern (for WebSocket & Audio)
+
+Unlike HTTP-based patterns, real-time voice requires a **Service Layer** for complex browser API interactions.
+
+**When to use Service Layer**:
+- WebSocket clients (long-lived connections)
+- Web Audio API wrappers (complex state)
+- Voice Activity Detection (algorithmic logic)
+- Audio encoding/decoding (transformations)
+
+**Pattern**:
+
+```
+Hook (React)
+   ↓
+Service Class (Stateful logic, browser APIs)
+   ↓
+Browser API (WebSocket, Web Audio, MediaStream)
+```
+
+**Example Structure**:
+
+```
+domains/live-voice-agent/
+├── services/
+│   ├── websocket-client.ts       # Class-based WebSocket wrapper
+│   ├── audio-processor.ts        # Class-based Web Audio API wrapper
+│   └── vad-detector.ts           # Voice Activity Detection algorithm
+└── hooks/
+    ├── use-gemini-live.ts        # Orchestrates services
+    ├── use-audio-stream.ts       # Audio capture/playback
+    └── use-voice-activity.ts     # VAD hook
+```
+
+**Anti-Pattern**: DON'T put complex browser API logic directly in hooks
+
+```tsx
+// ❌ WRONG: Complex Web Audio logic in hook
+export function useAudio() {
+  const [context] = useState(() => new AudioContext());
+
+  const play = useCallback((data: ArrayBuffer) => {
+    context.decodeAudioData(data).then(buffer => {
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start();
+    });
+  }, [context]);
+
+  // 50+ lines of complex audio logic...
+}
+
+// ✅ CORRECT: Delegate to service class
+export function useAudio() {
+  const processor = useRef(new AudioProcessor());
+
+  const play = useCallback(async (data: ArrayBuffer) => {
+    await processor.current.playAudio(data);
+  }, []);
+
+  return { play };
+}
+```
+
+---
+
+### 8.4 State Management for Voice Agents
+
+**White Library (Chat Agent)**:
+- Uses built-in `useChatConversationStore` and `useStaticAgentStore`
+- DO NOT create separate Zustand store for chat messages
+- ONLY create Zustand store for UI preferences (theme toggles, settings)
+
+**Gemini Live (Voice Agent)**:
+- MUST create custom Zustand stores for:
+  - Session state (`voice-session-store.ts`)
+  - Audio buffers (`audio-buffer-store.ts`)
+  - Connection status
+  - VAD state
+
+```tsx
+// domains/live-voice-agent/stores/voice-session-store.ts
+import { create } from 'zustand';
+
+interface VoiceSessionState {
+  sessionId: string | null;
+  status: 'idle' | 'connecting' | 'active' | 'paused' | 'ended';
+  startedAt: Date | null;
+  duration: number;
+
+  // Actions
+  startSession: (id: string) => void;
+  endSession: () => void;
+  setStatus: (status: VoiceSessionState['status']) => void;
+}
+
+export const useVoiceSessionStore = create<VoiceSessionState>((set) => ({
+  sessionId: null,
+  status: 'idle',
+  startedAt: null,
+  duration: 0,
+
+  startSession: (id) => set({
+    sessionId: id,
+    status: 'connecting',
+    startedAt: new Date()
+  }),
+
+  endSession: () => set({
+    status: 'ended',
+    sessionId: null
+  }),
+
+  setStatus: (status) => set({ status })
+}));
+```
+
+---
+
+### 8.5 Error Handling Patterns for Real-time Connections
+
+**WebSocket Error Handling**:
+
+```tsx
+// domains/live-voice-agent/services/websocket-client.ts
+export class GeminiLiveWebSocketClient {
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 3;
+  private reconnectDelay = 1000;
+
+  async connect(): Promise<void> {
+    try {
+      this.ws = new WebSocket(this.url);
+
+      this.ws.onerror = (error) => {
+        this.handleError(error);
+      };
+
+      this.ws.onclose = (event) => {
+        if (!event.wasClean && this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnect();
+        }
+      };
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  private async reconnect(): Promise<void> {
+    this.reconnectAttempts++;
+    await new Promise(resolve => setTimeout(resolve, this.reconnectDelay));
+    await this.connect();
+  }
+
+  private handleError(error: any): void {
+    console.error('WebSocket error:', error);
+    this.onError?.(error);
+  }
+
+  onError?: (error: any) => void;
+}
+```
+
+**Audio Error Handling**:
+
+```tsx
+// domains/live-voice-agent/services/audio-processor.ts
+export class AudioProcessor {
+  async startCapture(onAudioData: (data: ArrayBuffer) => void): Promise<void> {
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+    } catch (error) {
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          throw new Error('Microphone permission denied');
+        } else if (error.name === 'NotFoundError') {
+          throw new Error('No microphone found');
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+---
+
+### 8.6 Integration Decision Matrix
+
+| Requirement | Use White Library | Use Gemini Live |
+|-------------|-------------------|-----------------|
+| Chat-based voice messages | ✅ | ❌ |
+| Real-time conversation | ❌ | ✅ |
+| Pre-built UI | ✅ | ❌ |
+| Low latency (<1s) | ❌ | ✅ |
+| Easy setup | ✅ | ❌ |
+| Full control | ❌ | ✅ |
+| Session management | ✅ (built-in) | ❌ (custom) |
+| Audio format flexibility | ❌ (OGG only) | ✅ (PCM, Opus) |

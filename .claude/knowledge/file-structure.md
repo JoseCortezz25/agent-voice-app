@@ -323,26 +323,65 @@ src/
 │           └── route.ts
 │
 ├── domains/                    # [BUSINESS] Logic by domain
-│   ├── auth/
-│   │   ├── components/        # Auth-specific components
+│   ├── chat-agent/           # Voice messaging with White Library
+│   │   ├── components/
 │   │   │   ├── atoms/
+│   │   │   │   └── recording-indicator.tsx
 │   │   │   ├── molecules/
+│   │   │   │   └── chat-config-panel.tsx
 │   │   │   └── organisms/
-│   │   ├── hooks/            # Auth hooks
-│   │   ├── stores/           # Auth state (Zustand)
-│   │   ├── actions.ts        # Auth Server Actions
-│   │   ├── schema.ts         # Auth validations
-│   │   └── types.ts          # Auth types
+│   │   │       └── white-chat-container.tsx
+│   │   ├── hooks/
+│   │   │   ├── use-chat-config.ts      # White Library config
+│   │   │   ├── use-chat-theme.ts       # White Library theme
+│   │   │   └── use-webhook-handler.ts  # Backend webhook logic
+│   │   ├── stores/
+│   │   │   └── chat-ui-store.ts        # UI preferences (separate from White Library store)
+│   │   ├── actions.ts        # Server Actions for webhook endpoint
+│   │   ├── schema.ts         # Webhook request/response validation
+│   │   └── types.ts          # White Library types extension
 │   │
-│   ├── users/
+│   ├── live-voice-agent/     # Real-time voice with Gemini Live
+│   │   ├── components/
+│   │   │   ├── atoms/
+│   │   │   │   ├── mic-button.tsx
+│   │   │   │   ├── connection-status.tsx
+│   │   │   │   └── audio-visualizer.tsx
+│   │   │   ├── molecules/
+│   │   │   │   ├── voice-controls.tsx
+│   │   │   │   └── conversation-display.tsx
+│   │   │   └── organisms/
+│   │   │       └── live-voice-session.tsx
+│   │   ├── hooks/
+│   │   │   ├── use-websocket-connection.ts
+│   │   │   ├── use-audio-stream.ts
+│   │   │   ├── use-voice-activity.ts
+│   │   │   └── use-gemini-live.ts
+│   │   ├── stores/
+│   │   │   ├── voice-session-store.ts    # Session state
+│   │   │   └── audio-buffer-store.ts     # Audio buffers
+│   │   ├── services/
+│   │   │   ├── websocket-client.ts       # WebSocket wrapper
+│   │   │   ├── audio-processor.ts        # Web Audio API logic
+│   │   │   └── vad-detector.ts           # Voice Activity Detection
+│   │   ├── actions.ts        # Server Actions (if needed for logging)
+│   │   ├── schema.ts         # WebSocket message validation
+│   │   └── types.ts          # Gemini Live API types
+│   │
+│   ├── session-management/   # Common session logic
 │   │   ├── components/
 │   │   ├── hooks/
+│   │   │   └── use-session-history.ts
 │   │   ├── stores/
-│   │   ├── actions.ts
+│   │   │   └── session-store.ts
+│   │   ├── actions.ts        # CRUD for sessions
 │   │   ├── schema.ts
 │   │   └── types.ts
 │   │
-│   └── projects/             # Another domain
+│   ├── auth/                 # (Existing auth domain)
+│   │   └── ...
+│   │
+│   └── users/                # (Existing users domain)
 │       └── ...
 │
 ├── components/                 # [UI] Global reusable components
@@ -410,23 +449,35 @@ src/
 
 #### Where does each file type go?
 
-| File type                     | Location                        | Example                                             |
-| ----------------------------- | ------------------------------- | --------------------------------------------------- |
-| **Reusable UI component**     | `/components/{atomic-level}/`   | `/components/atoms/button.tsx`                      |
-| **Domain-specific component** | `/domains/{domain}/components/` | `/domains/auth/components/molecules/login-form.tsx` |
-| **Reusable hook**             | `/utils/` or create `/hooks/`   | `/utils/use-media-query.ts`                         |
-| **Domain hook**               | `/domains/{domain}/hooks/`      | `/domains/auth/hooks/use-auth.ts`                   |
-| **Server Action**             | `/domains/{domain}/actions.ts`  | `/domains/users/actions.ts`                         |
-| **Store (Zustand)**           | `/domains/{domain}/stores/`     | `/domains/auth/stores/auth-store.ts`                |
-| **Validation schema**         | `/domains/{domain}/schema.ts`   | `/domains/auth/schema.ts`                           |
-| **Domain types**              | `/domains/{domain}/types.ts`    | `/domains/users/types.ts`                           |
-| **Global types**              | `/lib/types.ts`                 | `/lib/types.ts`                                     |
-| **Pure utility**              | `/utils/`                       | `/utils/format-date.ts`                             |
-| **Configuration**             | `/config/` or `/lib/`           | `/lib/auth.ts`                                      |
-| **Global styles**             | `/styles/components/`           | `/styles/components/atoms/button.css`               |
-| **Domain styles**             | `/styles/domains/{domain}/`     | `/styles/domains/auth/login-form.css`               |
-| **Tests**                     | Next to file or `__tests__/`    | `/components/ui/button.test.tsx`                    |
-| **Stories**                   | `/stories/` mirroring structure | `/stories/components/button.stories.tsx`            |
+| File type                     | Location                        | Example                                                   |
+| ----------------------------- | ------------------------------- | --------------------------------------------------------- |
+| **Reusable UI component**     | `/components/{atomic-level}/`   | `/components/atoms/button.tsx`                            |
+| **Domain-specific component** | `/domains/{domain}/components/` | `/domains/auth/components/molecules/login-form.tsx`       |
+| **Reusable hook**             | `/utils/` or create `/hooks/`   | `/utils/use-media-query.ts`                               |
+| **Domain hook**               | `/domains/{domain}/hooks/`      | `/domains/chat-agent/hooks/use-chat-config.ts`            |
+| **Server Action**             | `/domains/{domain}/actions.ts`  | `/domains/chat-agent/actions.ts` (webhook endpoint)       |
+| **Store (Zustand)**           | `/domains/{domain}/stores/`     | `/domains/live-voice-agent/stores/voice-session-store.ts` |
+| **Service/Client**            | `/domains/{domain}/services/`   | `/domains/live-voice-agent/services/websocket-client.ts`  |
+| **Validation schema**         | `/domains/{domain}/schema.ts`   | `/domains/chat-agent/schema.ts`                           |
+| **Domain types**              | `/domains/{domain}/types.ts`    | `/domains/live-voice-agent/types.ts`                      |
+| **Global types**              | `/lib/types.ts`                 | `/lib/types.ts`                                           |
+| **Pure utility**              | `/utils/`                       | `/utils/format-date.ts`                                   |
+| **Configuration**             | `/config/` or `/lib/`           | `/lib/auth.ts`                                            |
+| **Global styles**             | `/styles/components/`           | `/styles/components/atoms/button.css`                     |
+| **Domain styles**             | `/styles/domains/{domain}/`     | `/styles/domains/chat-agent/white-chat-container.css`     |
+| **Tests**                     | Next to file or `__tests__/`    | `/components/ui/button.test.tsx`                          |
+| **Stories**                   | `/stories/` mirroring structure | `/stories/components/button.stories.tsx`                  |
+
+**Voice Agent Specific Locations**:
+
+| File type                     | Location                                                | Example                                                 |
+| ----------------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| **White Library config**      | `/domains/chat-agent/hooks/use-chat-config.ts`          | Theme and config for ChatPage                           |
+| **WebSocket client**          | `/domains/live-voice-agent/services/websocket-client.ts`| WebSocket connection logic                              |
+| **Audio processor**           | `/domains/live-voice-agent/services/audio-processor.ts` | Web Audio API encapsulation                             |
+| **Voice Activity Detection**  | `/domains/live-voice-agent/services/vad-detector.ts`    | VAD algorithm implementation                            |
+| **Webhook Server Action**     | `/domains/chat-agent/actions.ts`                        | Backend endpoint for White Library messages             |
+| **Session history**           | `/domains/session-management/actions.ts`                | CRUD operations for conversation sessions               |
 
 ---
 

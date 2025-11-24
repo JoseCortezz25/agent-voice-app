@@ -24,6 +24,36 @@
 
 ## 2. Key Dependencies
 
+### Voice Agent Libraries
+
+| Library            | Version  | Purpose                                              |
+| ------------------ | -------- | ---------------------------------------------------- |
+| **white-library**  | `latest` | Chat UI with audio recording/playback for voice msgs |
+| **@google/genai**  | `latest` | Official Google Generative AI SDK for Gemini API     |
+
+```bash
+# Install White Library for chat-based voice messaging
+npm install white-library
+
+# Install Google Generative AI SDK for Gemini Live API
+npm install @google/genai
+```
+
+**White Library Integration**:
+- Pre-built React chat components (`ChatPage`, `ChatInput`, `ChatHeader`, `ChatMessage`)
+- MediaRecorder-based audio recording (outputs OGG format)
+- Built-in session management with 2h expiration
+- Customizable themes and configuration
+- HTTP webhook integration for backend communication
+
+**Gemini Live API Integration**:
+- WebSocket-based real-time bidirectional audio streaming
+- Native audio models: `gemini-2.0-flash-exp`, `gemini-2.5-flash-native-audio-preview-09-2025`
+- Low-latency voice conversations (<1s end-to-end)
+- Multimodal support (audio + text input/output)
+
+---
+
 ### UI Libraries and Styling
 
 | Library                       | Version  | Purpose                                    |
@@ -48,23 +78,26 @@ npx shadcn@latest add dialog
 
 ### State Management
 
-| Library             | Version   | Purpose                                   |
-| ------------------- | --------- | ----------------------------------------- |
-| **React Query**     | `^5.0.0`  | Server state management (data fetching)   |
-| **Zustand**         | `5.0.5`   | Client/UI state management                |
-| **React Hook Form** | `^7.53.2` | Complex form state management             |
-| **nuqs**            | `latest`  | URL-based state management (query params) |
+| Library             | Version   | Purpose                                       |
+| ------------------- | --------- | --------------------------------------------- |
+| **React Query**     | `^5.0.0`  | Server state management (data fetching)       |
+| **Zustand**         | `5.0.5`   | Client/UI state management                    |
+| **React Hook Form** | `^7.53.2` | Complex form state management                 |
+| **nuqs**            | `latest`  | URL-based state management (query params)     |
+| **white-library**   | `latest`  | Built-in chat state (messages, session, etc.) |
 
 #### State Management Strategy
 
 We follow a **decision matrix** to choose the right tool:
 
-| State Type    | Tool            | When to Use                         |
-| ------------- | --------------- | ----------------------------------- |
-| **Server**    | React Query     | Data from backend (fetched, cached) |
-| **Client/UI** | Zustand         | UI state, local preferences         |
-| **Local**     | useState        | Component-only state                |
-| **Forms**     | React Hook Form | Complex forms with validation       |
+| State Type        | Tool            | When to Use                                 |
+| ----------------- | --------------- | ------------------------------------------- |
+| **Server**        | React Query     | Data from backend (fetched, cached)         |
+| **Client/UI**     | Zustand         | UI state, local preferences                 |
+| **Local**         | useState        | Component-only state                        |
+| **Forms**         | React Hook Form | Complex forms with validation               |
+| **Chat (White)**  | White Library   | Chat messages, session, audio (via library) |
+| **Voice (Gemini)**| Custom Zustand  | WebSocket state, audio buffers, VAD         |
 
 **React Query (TanStack Query) Features**:
 
@@ -207,6 +240,32 @@ app/
 │   └── page.tsx
 └── api/
     └── users/route.ts
+```
+
+---
+
+### Real-time Communication & Audio APIs
+
+**Browser APIs used** (no external libraries needed):
+
+| API                     | Purpose                                      | Used By          |
+| ----------------------- | -------------------------------------------- | ---------------- |
+| **WebSocket**           | Bidirectional real-time communication        | Gemini Live      |
+| **MediaRecorder API**   | Audio recording to Blob (OGG format)         | White Library    |
+| **Web Audio API**       | Low-latency audio playback, processing       | Gemini Live      |
+| **MediaStream API**     | Access microphone, audio capture             | Both             |
+| **fetch API**           | HTTP requests to webhook backend             | White Library    |
+
+**White Library Audio Flow**:
+```
+User speaks → MediaRecorder → OGG Blob → multipart/form-data → Backend Webhook
+Backend response → JSON → White Library store → UI update
+```
+
+**Gemini Live Audio Flow**:
+```
+User speaks → MediaStream → AudioContext → Base64 encode → WebSocket send
+WebSocket receive → Base64 decode → AudioContext → Speaker playback
 ```
 
 ---

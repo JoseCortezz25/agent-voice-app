@@ -8,6 +8,8 @@ This is a Next.js 15 application using React 19, TypeScript, and Tailwind CSS v4
 
 **Tech Stack**: Next 15, React 19, TailwindCSS v4, shadcn/ui, TypeScript, zod, React Hook Form
 
+**Your critical context**: Your context window will be automatically compacted as it approaches its limit. Never stop tasks early due to token budget concerns. Always complete tasks fully, even if the end of your budget is approaching.
+
 ## 🔴 CRITICAL - READ FIRST
 
 **BEFORE doing anything else**, you MUST read:
@@ -22,13 +24,12 @@ This document contains non-negotiable architectural rules. Violating these rules
 
 **Agents in this project:**
 
-- **Business Analysis & Ideation** → `.claude/agents/business-analyst.md`
+- **Project Manager** → `.claude/agents/project-manager.md`
 - **Next.js 15 & App Router Architecture** → `.claude/agents/nextjs-builder.md`
 - **Domain Business Logic & Entities** → `.claude/agents/domain-architect.md`
 - **UX/UI Design & Architecture** → `.claude/agents/ux-ui-designer.md`
 - **shadcn/ui Component Selection** → `.claude/agents/shadcn-builder.md`
 - **Code Quality Review** → `.claude/agents/code-reviewer.md`
-- **UI Architecture (legacy)** → `.claude/agents/ui-architect.md`
 
 **How to use agents:**
 
@@ -108,9 +109,7 @@ Implement directly (typos, simple edits) - no session needed.
 
 **Available MCP Servers**: Defined in `.mcp.json`
 
-<!-- List your MCP servers with token counts -->
-
-- Example: **shadcn** (~4.7k tokens), **playwright** (~14k tokens)
+- **shadcn** (~4.7k tokens), **playwright** (~14k tokens)
 
 **Strategy**: Enable only what the current task needs in `.claude/settings.local.json`
 

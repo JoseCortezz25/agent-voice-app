@@ -27,7 +27,7 @@ const eslintConfig = [
       camelcase: [
         'error',
         {
-          allow: ['api_url', 'Geist_Mono']
+          allow: ['api_url', 'Geist_Mono', 'generation_config', 'response_modalities', 'speech_config', 'voice_config', 'prebuilt_voice_config', 'voice_name', 'realtime_input', 'media_chunks', 'mime_type', 'client_content', 'turn_complete']
         }
       ],
       'no-unused-vars': 'off',
