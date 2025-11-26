@@ -3,9 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ConversationsList } from '@/domains/voice-agent/components/organisms/conversations-list';
 import { useConversationStore } from '@/domains/voice-agent/stores/conversation.store';
 import { getAllConversations } from '@/domains/voice-agent/repositories/conversation.repository';
@@ -34,47 +31,53 @@ export default function GeminiLivePage() {
   }, [setConversations]);
 
   return (
-    <div className="bg-background flex min-h-screen flex-col items-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="flex min-h-screen flex-col items-center bg-[var(--color-void)] p-[var(--space-4)]">
+      <div className="w-full max-w-[var(--content-width)]">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">
+        <header className="mb-[var(--space-8)] flex items-center justify-between">
+          <h1 className="font-[family-name:var(--font-display)] font-medium tracking-tight text-[var(--color-text)] text-[var(--text-3xl)]">
             {GEMINI_LIVE_TEXT.landing.title}
           </h1>
-          <Button onClick={() => router.push('/gemini-live/new')} size="lg">
+          <button
+            onClick={() => router.push('/gemini-live/new')}
+            className="h-[var(--button-height)] rounded-none bg-[var(--color-cyan)] px-[var(--space-6)] font-medium text-[var(--color-deep)] shadow-[var(--glow-cyan)] transition-all duration-[var(--duration-fast)] hover:bg-[var(--color-cyan)] hover:brightness-110 active:scale-[0.98]"
+          >
             {GEMINI_LIVE_TEXT.landing.newConversationButton}
-          </Button>
-        </div>
+          </button>
+        </header>
 
-        <Separator className="mb-6" />
+        <div className="mb-[var(--space-8)] h-px bg-[var(--color-border)]" />
 
         {/* Loading State */}
         {isLoading && (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">
+          <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-8)] text-center">
+            <p className="font-[family-name:var(--font-display)] text-[var(--color-muted)]">
               {GEMINI_LIVE_TEXT.common.loading}
             </p>
-          </Card>
+          </div>
         )}
 
         {/* Empty State */}
         {!isLoading && conversations.length === 0 && (
-          <Card className="p-8 text-center">
-            <h2 className="mb-2 text-xl font-semibold">
+          <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-12)] text-center">
+            <h2 className="mb-[var(--space-3)] font-[family-name:var(--font-display)] font-medium text-[var(--color-text)] text-[var(--text-xl)]">
               {GEMINI_LIVE_TEXT.landing.emptyState.title}
             </h2>
-            <p className="text-muted-foreground mb-4">
+            <p className="mb-[var(--space-6)] font-[family-name:var(--font-body)] text-[var(--color-muted)]">
               {GEMINI_LIVE_TEXT.landing.emptyState.description}
             </p>
-            <Button onClick={() => router.push('/gemini-live/new')}>
+            <button
+              onClick={() => router.push('/gemini-live/new')}
+              className="h-[var(--button-height)] rounded-none bg-[var(--color-cyan)] px-[var(--space-6)] font-medium text-[var(--color-deep)] shadow-[0_0_16px_var(--color-cyan-glow)] transition-all duration-[var(--duration-fast)] hover:brightness-110 active:scale-[0.98]"
+            >
               {GEMINI_LIVE_TEXT.landing.emptyState.createButton}
-            </Button>
-          </Card>
+            </button>
+          </div>
         )}
 
         {/* Conversations List */}
         {!isLoading && conversations.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-[var(--space-3)]">
             <ConversationsList />
           </div>
         )}

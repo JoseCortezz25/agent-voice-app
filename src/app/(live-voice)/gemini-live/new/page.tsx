@@ -8,12 +8,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -80,115 +75,136 @@ export default function NewConversationPage() {
   };
 
   return (
-    <div className="bg-background flex min-h-screen flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-2xl p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-void)] p-[var(--space-4)]">
+      <div className="w-full max-w-[var(--narrow-width)]">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">
+        <header className="mb-[var(--space-8)]">
+          <h1 className="mb-[var(--space-2)] font-[family-name:var(--font-display)] font-medium tracking-tight text-[var(--color-text)] text-[var(--text-2xl)]">
             {GEMINI_LIVE_TEXT.configuration.pageTitle}
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-[var(--color-muted)] text-[var(--text-sm)]">
             {GEMINI_LIVE_TEXT.configuration.subtitle}
           </p>
-        </div>
+        </header>
 
-        <Separator className="mb-6" />
+        {/* Form Card */}
+        <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-6)]">
+          {/* Form */}
+          <div className="space-y-[var(--space-6)]">
+            {/* Title Field */}
+            <div className="space-y-[var(--space-2)]">
+              <label
+                htmlFor="title"
+                className="block font-[family-name:var(--font-display)] font-medium tracking-wide text-[var(--color-text)] text-[var(--text-sm)] uppercase"
+              >
+                {GEMINI_LIVE_TEXT.configuration.conversationTitle.label}
+              </label>
+              <input
+                type="text"
+                id="title"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder={
+                  GEMINI_LIVE_TEXT.configuration.conversationTitle.placeholder
+                }
+                maxLength={100}
+                className="h-[var(--input-height)] w-full rounded-none border border-[var(--color-border)] bg-[var(--color-slate)] px-[var(--space-3)] text-[var(--color-text)] transition-all duration-[var(--duration-fast)] placeholder:text-[var(--color-faint)] focus:border-[var(--color-cyan)] focus:ring-2 focus:ring-[var(--color-cyan-subtle)] focus:outline-none"
+              />
+              <p className="text-[var(--color-faint)] text-[var(--text-xs)]">
+                {GEMINI_LIVE_TEXT.configuration.conversationTitle.hint}
+              </p>
+            </div>
 
-        {/* Form */}
-        <div className="space-y-6">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              {GEMINI_LIVE_TEXT.configuration.conversationTitle.label}
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder={
-                GEMINI_LIVE_TEXT.configuration.conversationTitle.placeholder
-              }
-              maxLength={100}
-            />
-            <p className="text-muted-foreground text-xs">
-              {GEMINI_LIVE_TEXT.configuration.conversationTitle.hint}
-            </p>
+            {/* System Instruction Field */}
+            <div className="space-y-[var(--space-2)]">
+              <label
+                htmlFor="system-instruction"
+                className="block font-[family-name:var(--font-display)] font-medium tracking-wide text-[var(--color-text)] text-[var(--text-sm)] uppercase"
+              >
+                {GEMINI_LIVE_TEXT.configuration.systemPrompt.label}
+              </label>
+              <textarea
+                id="system-instruction"
+                value={systemInstruction}
+                onChange={e =>
+                  setSystemInstruction(
+                    e.target.value as typeof systemInstruction
+                  )
+                }
+                placeholder={
+                  GEMINI_LIVE_TEXT.configuration.systemPrompt.placeholder
+                }
+                rows={6}
+                maxLength={2000}
+                className="min-h-[120px] w-full resize-y rounded-none border border-[var(--color-border)] bg-[var(--color-slate)] px-[var(--space-3)] py-[var(--space-3)] text-[var(--color-text)] transition-all duration-[var(--duration-fast)] placeholder:text-[var(--color-faint)] focus:border-[var(--color-cyan)] focus:ring-2 focus:ring-[var(--color-cyan-subtle)] focus:outline-none"
+              />
+              <p className="text-[var(--color-faint)] text-[var(--text-xs)]">
+                {GEMINI_LIVE_TEXT.configuration.systemPrompt.hint}
+              </p>
+            </div>
+
+            {/* Voice Selection */}
+            <div className="space-y-[var(--space-2)]">
+              <Label
+                htmlFor="voice"
+                className="block font-[family-name:var(--font-display)] font-medium tracking-wide text-[var(--color-text)] text-[var(--text-sm)] uppercase"
+              >
+                {GEMINI_LIVE_TEXT.configuration.voice.label}
+              </Label>
+              <Select
+                value={voiceName}
+                onValueChange={value => setVoiceName(value as VoiceName)}
+              >
+                <SelectTrigger
+                  id="voice"
+                  className="h-[var(--input-height)] w-full rounded-none border border-[var(--color-border)] bg-[var(--color-slate)] text-[var(--color-text)] focus:border-[var(--color-cyan)] focus:ring-2 focus:ring-[var(--color-cyan-subtle)]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)]">
+                  {VOICES.map(voice => (
+                    <SelectItem
+                      key={voice}
+                      value={voice}
+                      className="text-[var(--color-text)] focus:bg-[var(--color-slate)] focus:text-[var(--color-text)]"
+                    >
+                      {GEMINI_LIVE_TEXT.voices[voice]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[var(--color-faint)] text-[var(--text-xs)]">
+                {GEMINI_LIVE_TEXT.configuration.voice.hint}
+              </p>
+            </div>
           </div>
 
-          {/* System Instruction */}
-          <div className="space-y-2">
-            <Label htmlFor="system-instruction">
-              {GEMINI_LIVE_TEXT.configuration.systemPrompt.label}
-            </Label>
-            <Textarea
-              id="system-instruction"
-              value={systemInstruction}
-              onChange={e =>
-                setSystemInstruction(
-                  e.target
-                    .value as typeof GEMINI_LIVE_TEXT.configuration.systemPrompt.default
-                )
-              }
-              placeholder={
-                GEMINI_LIVE_TEXT.configuration.systemPrompt.placeholder
-              }
-              rows={6}
-              maxLength={2000}
-            />
-            <p className="text-muted-foreground text-xs">
-              {GEMINI_LIVE_TEXT.configuration.systemPrompt.hint}
-            </p>
-          </div>
+          {/* Divider */}
+          <div className="my-[var(--space-6)] h-px bg-[var(--color-border)]" />
 
-          {/* Voice Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="voice">
-              {GEMINI_LIVE_TEXT.configuration.voice.label}
-            </Label>
-            <Select
-              value={voiceName}
-              onValueChange={value => setVoiceName(value as VoiceName)}
+          {/* Actions */}
+          <div className="flex gap-[var(--space-3)]">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              disabled={creating}
+              className="h-[var(--button-height)] flex-1 rounded-none border border-[var(--color-border)] bg-transparent px-[var(--space-4)] font-medium text-[var(--color-text)] transition-all duration-[var(--duration-fast)] hover:border-[var(--color-cyan)] hover:bg-[var(--color-slate)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <SelectTrigger id="voice">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {VOICES.map(voice => (
-                  <SelectItem key={voice} value={voice}>
-                    {GEMINI_LIVE_TEXT.voices[voice]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              {GEMINI_LIVE_TEXT.configuration.voice.hint}
-            </p>
+              {GEMINI_LIVE_TEXT.configuration.actions.cancel}
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateConversation}
+              disabled={creating || !systemInstruction.trim() || !title.trim()}
+              className="h-[var(--button-height)] flex-1 rounded-none bg-[var(--color-cyan)] px-[var(--space-4)] font-medium text-[var(--color-deep)] shadow-[var(--glow-cyan)] transition-all duration-[var(--duration-fast)] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {creating
+                ? GEMINI_LIVE_TEXT.configuration.actions.creating
+                : GEMINI_LIVE_TEXT.configuration.actions.start}
+            </button>
           </div>
         </div>
-
-        <Separator className="my-6" />
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={creating}
-            className="flex-1"
-          >
-            {GEMINI_LIVE_TEXT.configuration.actions.cancel}
-          </Button>
-          <Button
-            onClick={handleCreateConversation}
-            disabled={creating || !systemInstruction.trim() || !title.trim()}
-            className="flex-1"
-          >
-            {creating
-              ? GEMINI_LIVE_TEXT.configuration.actions.creating
-              : GEMINI_LIVE_TEXT.configuration.actions.start}
-          </Button>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 }

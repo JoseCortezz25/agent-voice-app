@@ -8,8 +8,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ArrowLeft, Mic, MicOff } from 'lucide-react';
 import { ConnectionStatus } from '@/domains/voice-agent/components/atoms/connection-status';
 import { useGeminiLive } from '@/domains/voice-agent/hooks/use-gemini-live';
@@ -115,12 +113,12 @@ export default function ActiveConversationPage() {
   // Show loading while fetching configuration
   if (isLoadingConfig) {
     return (
-      <div className="bg-background flex min-h-screen flex-col items-center justify-center p-4">
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-void)] p-[var(--space-4)]">
+        <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-8)] text-center">
+          <p className="font-[family-name:var(--font-display)] text-[var(--color-muted)]">
             {GEMINI_LIVE_TEXT.session.loading.loadingConfig}
           </p>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -131,51 +129,51 @@ export default function ActiveConversationPage() {
   }
 
   return (
-    <div className="bg-background flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--color-void)]">
       {/* Header */}
-      <div className="bg-card border-b">
-        <div className="container mx-auto flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-deep)]">
+        <div className="container mx-auto flex items-center justify-between p-[var(--space-4)]">
+          <div className="flex items-center gap-[var(--space-3)]">
+            <button
               onClick={handleDisconnect}
               disabled={status === 'connecting'}
+              className="flex h-10 w-10 items-center justify-center rounded-none border border-[var(--color-border)] text-[var(--color-cyan)] transition-all duration-[var(--duration-fast)] hover:border-[var(--color-cyan)] hover:bg-[var(--color-slate)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowLeft className="h-5 w-5" />
-            </Button>
+            </button>
             <div>
-              <h1 className="text-lg font-semibold">{conversation.title}</h1>
-              <p className="text-muted-foreground text-xs">
+              <h1 className="font-[family-name:var(--font-display)] font-medium text-[var(--color-text)] text-[var(--text-lg)]">
+                {conversation.title}
+              </h1>
+              <p className="text-[var(--color-faint)] text-[var(--text-xs)]">
                 {GEMINI_LIVE_TEXT.voices[conversation.config.voiceName]}
               </p>
             </div>
           </div>
           <ConnectionStatus status={status} />
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="container mx-auto flex-1 p-4">
-        <div className="mx-auto max-w-3xl space-y-6">
+      <main className="container mx-auto flex-1 p-[var(--space-4)]">
+        <div className="mx-auto max-w-3xl space-y-[var(--space-6)]">
           {/* Connecting State */}
           {status === 'connecting' && (
-            <Card className="p-6 text-center">
-              <p className="text-muted-foreground">
+            <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-8)] text-center">
+              <p className="font-[family-name:var(--font-display)] text-[var(--color-muted)]">
                 {GEMINI_LIVE_TEXT.session.loading.connecting}
               </p>
-            </Card>
+            </div>
           )}
 
           {/* Error State */}
           {status === 'error' && (
-            <Card className="border-destructive p-6 text-center">
-              <p className="text-destructive mb-4">
+            <div className="rounded-none border border-[var(--color-error)] bg-[var(--color-deep)] p-[var(--space-6)] text-center">
+              <p className="mb-[var(--space-4)] font-[family-name:var(--font-display)] text-[var(--color-error)]">
                 {error || GEMINI_LIVE_TEXT.session.errors.connectionFailed}
               </p>
-              <div className="flex justify-center gap-3">
-                <Button
-                  variant="outline"
+              <div className="flex justify-center gap-[var(--space-3)]">
+                <button
                   onClick={() =>
                     connect({
                       voiceName: conversation.config.voiceName,
@@ -184,27 +182,33 @@ export default function ActiveConversationPage() {
                       conversationId: conversation.id
                     })
                   }
+                  className="h-[var(--button-height)] rounded-none border border-[var(--color-border)] bg-transparent px-[var(--space-4)] font-medium text-[var(--color-text)] transition-all duration-[var(--duration-fast)] hover:border-[var(--color-cyan)] hover:bg-[var(--color-slate)]"
                 >
                   {GEMINI_LIVE_TEXT.common.retry}
-                </Button>
-                <Button variant="outline" onClick={handleDisconnect}>
+                </button>
+                <button
+                  onClick={handleDisconnect}
+                  className="h-[var(--button-height)] rounded-none border border-[var(--color-border)] bg-transparent px-[var(--space-4)] font-medium text-[var(--color-text)] transition-all duration-[var(--duration-fast)] hover:border-[var(--color-cyan)] hover:bg-[var(--color-slate)]"
+                >
                   {GEMINI_LIVE_TEXT.common.back}
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Active Session */}
           {isActive && (
             <>
               {/* Controls */}
-              <Card className="p-6">
-                <div className="flex items-center justify-center gap-4">
-                  <Button
+              <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-6)]">
+                <div className="flex items-center justify-center gap-[var(--space-4)]">
+                  <button
                     onClick={toggleMute}
-                    variant={isMuted ? 'destructive' : 'default'}
-                    size="lg"
-                    className="flex items-center gap-2"
+                    className={`flex h-[var(--button-height)] items-center gap-[var(--space-2)] rounded-none px-[var(--space-6)] font-medium transition-all duration-[var(--duration-fast)] ${
+                      isMuted
+                        ? 'border border-[var(--color-error)] bg-[var(--color-error)] text-white hover:brightness-110'
+                        : 'border border-[var(--color-cyan)] bg-[var(--color-cyan)] text-[var(--color-deep)] hover:brightness-110'
+                    } `}
                   >
                     {isMuted ? (
                       <>
@@ -217,34 +221,33 @@ export default function ActiveConversationPage() {
                         {GEMINI_LIVE_TEXT.session.controls.mute}
                       </>
                     )}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleDisconnect}
-                    variant="outline"
-                    size="lg"
+                    className="h-[var(--button-height)] rounded-none border border-[var(--color-border)] bg-transparent px-[var(--space-6)] font-medium text-[var(--color-text)] transition-all duration-[var(--duration-fast)] hover:border-[var(--color-cyan)] hover:bg-[var(--color-slate)]"
                   >
                     {GEMINI_LIVE_TEXT.session.controls.disconnect}
-                  </Button>
+                  </button>
                 </div>
-              </Card>
+              </div>
 
               {/* Session Info */}
-              <Card className="p-4">
-                <div className="text-muted-foreground text-center text-sm">
-                  <p className="font-medium">
+              <div className="rounded-none border border-[var(--color-border)] bg-[var(--color-deep)] p-[var(--space-4)]">
+                <div className="text-center text-[var(--text-sm)]">
+                  <p className="mb-[var(--space-1)] font-[family-name:var(--font-display)] font-medium text-[var(--color-text)]">
                     {GEMINI_LIVE_TEXT.session.title}
                   </p>
-                  <p className="text-xs">
+                  <p className="text-[var(--color-muted)] text-[var(--text-xs)]">
                     {isMuted
                       ? 'Micrófono silenciado'
                       : 'Habla para comenzar la conversación'}
                   </p>
                 </div>
-              </Card>
+              </div>
             </>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
