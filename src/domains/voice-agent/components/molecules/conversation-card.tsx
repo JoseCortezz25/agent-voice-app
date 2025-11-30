@@ -24,7 +24,7 @@ export function ConversationCard({
   const router = useRouter();
 
   const handleCardClick = () => {
-    router.push(`/gemini-live/${conversation.id}`);
+    router.push(`/voice/${conversation.id}`);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -44,20 +44,20 @@ export function ConversationCard({
     <article
       onClick={handleCardClick}
       className={cn(
-        // Card structure - sharp corners (minimal austero)
+        // Card structure - minimalist design
         'group relative',
-        'bg-[var(--bg-secondary)]',
-        'border border-[var(--border-subtle)]',
-        'rounded-none', // Sharp corners per design system
-        'p-[var(--space-4)]',
+        'bg-card',
+        'border-border border',
+        'rounded-lg',
+        'p-6',
 
-        // Hover state - electric blue border
-        'hover:border-[var(--color-electric-500)]',
-        'transition-all duration-[var(--duration-fast)]',
+        // Hover state
+        'hover:bg-accent',
+        'transition-colors duration-150',
 
         // Cursor and interactions
         'cursor-pointer',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-electric-500)] focus-visible:ring-offset-2 focus-visible:outline-none'
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
       )}
       role="button"
       tabIndex={0}
@@ -71,58 +71,26 @@ export function ConversationCard({
       <div className="flex items-start justify-between gap-4">
         {/* Content */}
         <div className="min-w-0 flex-1">
-          {/* Title - Display font (monospace) */}
-          <h3
-            className={cn(
-              'font-[family-name:var(--font-departure-mono)]',
-              'text-[var(--font-size-lg)]',
-              'font-bold',
-              'text-[var(--text-primary)]',
-              'mb-[var(--space-2)]',
-              'truncate'
-            )}
-          >
+          {/* Title */}
+          <h3 className="text-foreground mb-2 truncate text-lg font-semibold">
             {conversation.title}
           </h3>
 
           {/* Last message timestamp */}
-          <p
-            className={cn(
-              'text-[var(--font-size-sm)]',
-              'text-[var(--text-tertiary)]',
-              'mb-[var(--space-3)]'
-            )}
-          >
+          <p className="text-muted-foreground mb-3 text-sm">
             {GEMINI_LIVE_TEXT.landing.conversationCard.lastMessage}:{' '}
             {formatDate(conversation.lastMessageAt)}
           </p>
 
           {/* Metadata badges */}
-          <div className="flex flex-wrap items-center gap-[var(--space-3)]">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Voice badge */}
-            <span
-              className={cn(
-                'inline-flex items-center gap-1',
-                'px-[var(--space-2)] py-1',
-                'rounded-full',
-                'bg-[var(--color-slate)]',
-                'text-[var(--color-silver)]',
-                'text-[var(--font-size-xs)]',
-                'font-[family-name:var(--font-departure-mono)]',
-                'tracking-wide uppercase'
-              )}
-            >
+            <span className="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium tracking-wide uppercase">
               {GEMINI_LIVE_TEXT.voices[conversation.config.voiceName]}
             </span>
 
             {/* Message count */}
-            <span
-              className={cn(
-                'inline-flex items-center gap-1',
-                'text-[var(--font-size-xs)]',
-                'text-[var(--text-tertiary)]'
-              )}
-            >
+            <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
               <MessageSquare className="h-3 w-3" aria-hidden="true" />
               {GEMINI_LIVE_TEXT.landing.conversationCard.messagesCount(
                 conversation.messageCount
@@ -134,23 +102,7 @@ export function ConversationCard({
         {/* Delete button */}
         <button
           onClick={handleDeleteClick}
-          className={cn(
-            'flex-shrink-0',
-            'h-8 w-8',
-            'rounded-none', // Sharp corners
-            'flex items-center justify-center',
-
-            // Colors
-            'text-[var(--color-steel)]',
-            'hover:bg-[var(--color-error)]',
-            'hover:text-white',
-
-            // Transitions
-            'transition-all duration-[var(--duration-fast)]',
-
-            // Focus
-            'focus-visible:ring-2 focus-visible:ring-[var(--color-error)] focus-visible:outline-none'
-          )}
+          className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-destructive flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
           aria-label={`Delete conversation: ${conversation.title}`}
         >
           <Trash2 className="h-4 w-4" />

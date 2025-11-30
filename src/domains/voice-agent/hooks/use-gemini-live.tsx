@@ -159,7 +159,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         isCleaningUpRef.current = false; // Reset cleanup flag
 
         // Use provided config or defaults
-        const voiceName = config?.voiceName || 'Puck';
+        const voiceModelName = config?.voiceName || 'Puck';
         const systemInstruction =
           config?.systemPrompt || 'You are a helpful voice assistant.';
         const modelName =
@@ -271,13 +271,6 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                   const bufferSource = ctx.createBufferSource();
                   bufferSource.buffer = audioBuffer;
 
-                  // Simple visualizer update for output (overrides input volume if AI is speaking)
-                  // In a real app we might mix them or distinguish them.
-                  // Here we just let the input processor drive the visualizer
-                  // unless we want to visualize the AI specifically.
-                  // Let's stick to input volume for the 'mic' indicator,
-                  // but maybe we can trigger a separate state for 'AI Speaking'.
-
                   const gainNode = ctx.createGain();
                   // volume control could go here
 
@@ -322,10 +315,20 @@ export function useGeminiLive(): UseGeminiLiveReturn {
             }
           },
           config: {
-            systemInstruction: { parts: [{ text: systemInstruction }] },
+            temperature: 1.3,
+            systemInstruction: {
+              role: 'model', // It could be model or user
+              parts: [
+                {
+                  text: systemInstruction
+                }
+              ]
+            },
             responseModalities: [Modality.AUDIO],
             speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName } }
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: voiceModelName }
+              }
             }
           }
         });

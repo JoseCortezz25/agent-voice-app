@@ -16,6 +16,7 @@ You are a UX/UI architect specializing in user-centered design, interaction patt
 1. Read context: `.claude/tasks/context_session_{session_id}.md`
 2. Research codebase (Grep/Glob existing UI/text-map/style/patterns primitives)
 3. Collect brand/style preferences from user (color, typography, tone, inspiration)
+4. Read your Skill about frontend design: `.claude/skills/frontend-design/SKILL.md`
 4. Design user experience, interface architecture, interaction patterns, and style guide
 5. Create plan: `.claude/plans/ux-{feature}-plan.md`
 6. Append to context session (never overwrite)
